@@ -1,0 +1,119 @@
+variable mn equal 100
+variable epsilon equal ${mn}/100
+
+  # Default styles for molecules built out of "Monomers"
+  units           lj
+  atom_style      full
+
+  bond_style      hybrid harmonic table linear 4001
+  angle_style     none
+  dihedral_style  none
+
+  pair_style      hybrid lj/cut 2.5
+
+  pair_modify     mix arithmetic
+  special_bonds   lj/coul  1 1 1
+  comm_modify mode single cutoff 3.0
+  boundary s s s    
+  read_data 4_system_after_indent.data
+  
+  
+  
+#          atomTypes  pairStyle   epsilon sigma rcutoff
+
+pair_coeff    1 1     lj/cut      ${epsilon}     1.0   2.5
+pair_coeff    2 2     lj/cut      ${epsilon}     1.0   2.5
+
+
+bond_coeff 3 harmonic 100.0 1.0
+
+# During stage 2, add attractive forces between all pairs of non-consecutive
+# condensin anchors.  These forces are stored in the table file below:
+#          bondType   bondStyle      filename            label
+bond_coeff    2       table      table_bonds_stage2.dat  STAGE2
+
+# During stage 2, I assume the stage-1 bonds remain in place
+# (They have length 0.5.
+#  After 300000 timesteps during stage 1, the "k" value should be 10.0.)
+
+#          bondType   bondStyle    k     r0
+bond_coeff    1       harmonic    10.0  0.5
+  
+  
+#angle_coeff 1 cosine 5.0  #<-10nm fiber
+
+
+
+
+dump         1 all custom 1000 traj_stage4.lammpstrj id mol type x y z ix iy iz
+
+
+
+
+
+#     --- run the simulation ---
+
+# To use Langevin dynamics in LAMMPS you need both "fix langevin" and "fix nve"
+# (See http://lammps.sandia.gov/doc/fix_langevin.html for details.)
+
+#                           Tstart     Tstop    tdamp      randomseed
+
+fix fxlan all langevin       1.0        1.0     10.0         123456
+
+#                     pstart   pstop  pdamp(time-units, 2000 iters usually)
+fix fxnve all nve 
+# (See http://lammps.sandia.gov/doc/fix_langevin.html)
+
+
+
+
+
+thermo_style    custom step temp pe etotal press vol epair ebond eangle edihed
+thermo_modify   norm no  #(report total energy not energy / num_atoms)
+thermo          1000    #(time interval for printing out "thermo" data)
+
+timestep     0.005
+
+
+# Define "rCyl", a cylindrical region in space.
+#
+#                        cylinder_center radius
+#                       x,y,z?   x0    y0    rc0     zlo      zhi       inside
+#                         |      |     |      |       |        |        surface
+#                        \|/    \|/   \|/    \|/     \|/      \|/          |
+#                         V      V     V      V       V        V           V
+region  rCyl     cylinder z     0.0   0.0   10 -35 35  side in
+fix fxWall all wall/region rCyl lj126 1.0 1.0 1.122462048309373
+
+
+
+
+
+
+
+group chain type 1
+compute myMSD chain msd
+compute myMSDcom chain msd com yes
+variable t equal step
+variable xmsd equal c_myMSD[1]
+variable ymsd equal c_myMSD[2]
+variable zmsd equal c_myMSD[3]
+variable avemsd equal c_myMSD[4]
+
+
+variable xmsdcom equal c_myMSDcom[1]
+variable ymsdcom equal c_myMSDcom[2]
+variable zmsdcom equal c_myMSDcom[3]
+variable avemsdcom equal c_myMSDcom[4]
+
+
+fix mymsdfile all print 1000 "$t ${xmsd} ${ymsd} ${zmsd} ${avemsd}" file MSD_output.dat screen no
+fix mymsdcomfile all print 1000 "$t ${xmsdcom} ${ymsdcom} ${zmsdcom} ${avemsdcom}" file MSDcom_output.dat screen no
+
+
+
+
+timestep     0.005
+run 1000000
+
+write_data 5_system_after_final.data
