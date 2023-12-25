@@ -1,4 +1,3 @@
-  # Default styles for molecules built out of "Monomers"
   units           lj
   atom_style      full
 
@@ -16,11 +15,10 @@
   pair_coeff 1 1 lj/cut 1.0 1.0 1.122462048309373
   pair_coeff 2 2 lj/cut 1.0 1.0 1.122462048309373
   bond_coeff 3 harmonic 100.0 1.0
-  #angle_coeff 1 cosine 5  #<-10nm fiber
-  # stage 1 bonds are initially off
-  bond_coeff 1 harmonic 0.0 0.5   # <--(we can override this later)"
-  # stage 2 bonds are initially off
-  bond_coeff 2 harmonic 0.0 0.0   # <--(we can override this later)"
+
+  bond_coeff 1 harmonic 0.0 0.5  
+
+  bond_coeff 2 harmonic 0.0 0.0   
   
   # -- Run Section --
 
@@ -36,17 +34,12 @@ reset_timestep  0
 # set the velocity to zero
 velocity all create 0.0  123456
 
-# To use Langevin dynamics in LAMMPS you need both "fix langevin" and "fix nve"
-# (See http://lammps.sandia.gov/doc/fix_langevin.html for details.)
 
 #                           Tstart     Tstop    tdamp      randomseed
 
 fix fxlan all langevin       1.0        1.0     10.0         123456
 
-#                     pstart   pstop  pdamp(time-units, 2000 iters usually)
-#fix fxnph all nph x  -0.000   -0.000   1.0
 fix fxnve all nve 
-# (See http://lammps.sandia.gov/doc/fix_langevin.html)
 
 fix fxcenter all recenter 0.0 0.0 0.0
 
@@ -54,8 +47,7 @@ thermo_style    custom step temp pe etotal press vol epair ebond eangle edihed
 thermo_modify   norm no  #(report total energy not energy / num_atoms)
 thermo          1000    #(time interval for printing out "thermo" data)
 
-#balance dynamic x 20 1.0 -out tmp.balance
-#balance x uniform
+
 
 
 variable nloop1 loop 300
@@ -64,17 +56,10 @@ variable nloop1 loop 300
 
     print "############### LOOP ${nloop1} ###############"
 
-    # Now, change the bond-strength between condensin monomers.
-    # From the Naumova et al Science 2013 paper (supp materials)
-    # "Two-stage model: linear compaction + axial compression"
-    # "First, random consecutive loops with L=100 monomers (see above) were 
-    #  introduced, and anchors of neighboring loops were brought together 
-    #  using harmonic springs with a potential U = k * (r – r0)2; r0=0.5.
-    #  To avoid abrupt motion of the loop anchors, the force was gradually 
-    #  turned on over the first 300000 timesteps, with k linearly increasing 
-    #  in time from 0 to 10 kT."
-    # Do this by changing the parameters in the force-field for these
-    # bonds.
+    # Loop anchors of adjacent loops were brought into proximity by employing harmonic springs characterized by a 
+    # potential function U = k * (r – r0)², where r0 is set to 0.5. To prevent abrupt motion of the 
+    # loop anchors, the force was gradually activated over the initial 300,000 timesteps. 
+    # During this period, the force constant k linearly increased in time from 0 to 10 kT.
     #
     #    Formula used for "bond_style harmonic":
     # Ubond(r) = k*(r-r0)^2

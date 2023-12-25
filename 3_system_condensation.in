@@ -1,7 +1,7 @@
 variable mn equal 100
 variable epsilon equal ${mn}/100
 
-  # Default styles for molecules built out of "Monomers"
+  
   units           lj
   atom_style      full
 
@@ -20,11 +20,11 @@ variable epsilon equal ${mn}/100
   pair_coeff 1 1 lj/cut 1.0 1.0 1.122462048309373
   pair_coeff 2 2 lj/cut 1.0 1.0 1.122462048309373
   bond_coeff 3 harmonic 100.0 1.0
-  #angle_coeff 1 cosine 5.0  #<-10nm fiber
-  # stage 1 bonds are initially off
-  bond_coeff 1 harmonic 10.0 0.5   # <--(we can override this later)"
-  # stage 2 bonds are initially off
-  bond_coeff 2 harmonic 10.0 1.0   # <--(we can override this later)"
+  
+  
+  bond_coeff 1 harmonic 10.0 0.5  
+  
+  bond_coeff 2 harmonic 10.0 1.0   
   
   # -- Run Section --
 
@@ -43,16 +43,15 @@ reset_timestep  0
 # set the velocity to zero
 velocity all create 0.0  123456
 
-# To use Langevin dynamics in LAMMPS you need both "fix langevin" and "fix nve"
-# (See http://lammps.sandia.gov/doc/fix_langevin.html for details.)
+
 
 #                           Tstart     Tstop    tdamp      randomseed
 
 fix fxlan all langevin       1.0        1.0     10.0         123456
 
-#                     pstart   pstop  pdamp(time-units, 2000 iters usually)
+
 fix fxnve all nve 
-# (See http://lammps.sandia.gov/doc/fix_langevin.html)
+
 
 fix fxcenter all recenter 0.0 0.0 0.0
 
@@ -60,26 +59,17 @@ thermo_style    custom step temp pe etotal press vol epair ebond eangle edihed
 thermo_modify   norm no  #(report total energy not energy / num_atoms)
 thermo          1000    #(time interval for printing out "thermo" data)
 
-#balance dynamic x 20 1.0 -out tmp.balance
-#balance x uniform
 
-#          atomTypes  pairStyle   epsilon sigma rcutoff
-#  10nm-fiber
+
+
 pair_coeff    1 1     lj/cut      ${epsilon}     1.0   2.5
 pair_coeff    2 2     lj/cut      ${epsilon}     1.0   2.5
-#  30nm fiber (4.25^(1/3)=1.6198059006387417)
-#pair_coeff     1 1  lj/cut  1.0 1.6198059006387417 4.049514751596854
-#pair_coeff     2 2  lj/cut  1.0 1.6198059006387417 4.049514751596854
 
 
-# During stage 2, add attractive forces between all pairs of non-consecutive
-# condensin anchors.  These forces are stored in the table file below:
+
 #          bondType   bondStyle      filename            label
 bond_coeff    2       table      table_bonds_stage2.dat  STAGE2
 
-# During stage 2, I assume the stage-1 bonds remain in place
-# (They have length 0.5.
-#  After 300000 timesteps during stage 1, the "k" value should be 10.0.)
 
 #          bondType   bondStyle    k     r0
 bond_coeff    1       harmonic    10.0  0.5
