@@ -15,7 +15,7 @@ The repository comprises scripts and code employed for the investigation of bact
 
 
 ## File description
-system.data: This file contains the initial input with polymer configuration.
+- system.data: This file contains the initial input with polymer configuration.
 - 1_system_min.in: A script file designed for LAMMPS, intended to execute an energy minimization procedure for the system.
 - 2_system_loop_create.in: LAMMPS script file responsible for introducing harmonic spring energy between loop anchors, facilitating the simulation of the system as a self-avoiding polymer.
 - 3_system_condensation.in: LAMMPS script file designed to incorporate condensation forces between loop anchors, allowing the system to be simulated as a self-attracting polymer.
