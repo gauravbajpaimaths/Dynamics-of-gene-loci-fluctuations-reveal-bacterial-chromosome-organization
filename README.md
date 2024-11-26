@@ -1,5 +1,4 @@
-# Dynamics of gene loci fluctuations reveal bacterial chromosome organization
-
+# Gene loci fluctuations organization reveal bacterial chromosome dynamical organization
 ## Table of Contents  
 [Overview](#overview)  
 [System requirements](#system-requirements)  
