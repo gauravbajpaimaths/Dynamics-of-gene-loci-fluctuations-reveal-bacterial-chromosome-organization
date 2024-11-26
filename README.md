@@ -29,22 +29,22 @@ The repository comprises scripts and code employed for the investigation of bact
 - command.sh: Shell script to run multiple simulations with different Lennard-Jones interaction strengths (\( \epsilon \)).
 
 
-
-
-
 ## How to run
 - Refer [LAMMPS documentation](https://docs.lammps.org/Install.html) for installation. Run LAMMPS using command (make sure that the configuration file system.data is present in the same directory)
+  ## (A) Initial Simulations:
+
 ```
-## (A) Initial Simulations:
 ./lmp -in 1_system_min.in
 ./lmp -in 2_system_loop_create.in
 ./lmp -in 3_system_condensation.in
 ./lmp -in 4_system_cylinder_indent.in
-./lmp -in 5_system_cylinder_final.in
+./lmp -in 5_system_cylinder_indent_type1bead_fixtype2.in
 ```
 ## (B) Final Simulation:
+```
 ./command.sh system.in
 ./lmp -in system.in
+```
 
 Anticipated Outcome: The simulation generates a positional trajectory file in the lammpstrj format, utilized for visualizing simulation outcomes using [VMD](https://www.ks.uiuc.edu/Research/vmd/)  software. Furthermore, the simulation yields an msdcom_new.txt file, facilitating the computation of the mean squared displacement of the system in the x, y, and z directions.
 
