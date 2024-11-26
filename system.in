@@ -1,0 +1,162 @@
+variable mn equal 1
+variable epsilon equal ${mn}/100
+
+  # Default styles for molecules built out of "Monomers"
+  units           lj
+  atom_style      full
+
+  bond_style      hybrid harmonic zero
+  angle_style     cosine
+  dihedral_style  none
+
+  pair_style      hybrid lj/cut 2.5
+
+  pair_modify     mix arithmetic
+  special_bonds   lj/coul  1 1 1
+ # comm_modify mode single cutoff 3.0
+  boundary s s s    
+  read_data ../5_system_initial.data
+  
+  
+  
+#          atomTypes  pairStyle   epsilon sigma rcutoff
+
+pair_coeff    1 1     lj/cut      ${epsilon}     1.0   2.5
+pair_coeff    2 2     lj/cut      ${epsilon}     1.0   2.5
+
+
+bond_coeff 3 harmonic 100.0 1.0
+
+
+bond_coeff    2       zero
+
+
+
+bond_coeff    1       zero
+  
+  
+angle_coeff 1 5.0  #<-10nm fiber
+
+
+
+
+dump         1 all custom 10000 traj_stage5.lammpstrj id mol type x y z ix iy iz
+
+
+group type2 type 2
+group ALL_new subtract all type2
+
+
+#     --- run the simulation ---
+
+# To use Langevin dynamics in LAMMPS you need both "fix langevin" and "fix nve"
+# (See http://lammps.sandia.gov/doc/fix_langevin.html for details.)
+
+#                           Tstart     Tstop    tdamp      randomseed
+
+
+fix fxlan ALL_new  langevin       1.0        1.0     1.0       234567
+
+#                     pstart   pstop  pdamp(time-units, 2000 iters usually)
+fix fxnve ALL_new nve 
+# (See http://lammps.sandia.gov/doc/fix_langevin.html)
+
+
+
+
+
+thermo_style    custom step temp pe etotal press vol epair ebond eangle edihed
+thermo_modify   norm no  #(report total energy not energy / num_atoms)
+thermo          1000    #(time interval for printing out "thermo" data)
+
+
+
+
+# Define "rCyl", a cylindrical region in space.
+#
+#                        cylinder_center radius
+#                       x,y,z?   x0    y0    rc0     zlo      zhi       inside
+#                         |      |     |      |       |        |        surface
+#                        \|/    \|/   \|/    \|/     \|/      \|/          |
+#                         V      V     V      V       V        V           V
+region  rCyl     cylinder z     0.0   0.0    20       -50      50      side in
+
+
+
+fix fxWall all wall/region rCyl lj126 1.0 1.0 1.122462048309373
+
+
+group chain type 1
+compute myMSD chain msd
+compute myMSDcom chain msd com yes
+
+
+fix msd chain ave/time 1 1 1000 c_myMSDcom[1] c_myMSDcom[2] c_myMSDcom[3] c_myMSDcom[4] file msdcom_new.txt
+
+group middle id 5001:25000
+
+group commontype2 intersect middle type2
+group middletype1 subtract middle commontype2
+
+compute myMSDcom2 middletype1 msd com yes
+
+
+fix msd2 middletype1 ave/time 100 5 1000 c_myMSDcom2[1] c_myMSDcom2[2] c_myMSDcom2[3] c_myMSDcom2[4] file msdcom_middle.txt
+
+group endtype1 subtract chain middletype1
+compute myMSDcomendtype1 endtype1 msd com yes
+fix msdendtype1 endtype1 ave/time 100 5 1000 c_myMSDcomendtype1[1] c_myMSDcomendtype1[2] c_myMSDcomendtype1[3] c_myMSDcomendtype1[4] file msdcom_endtype1.txt
+
+
+compute myMSDcomtype2 type2 msd com yes
+fix msdtype2 type2 ave/time 100 5 1000 c_myMSDcomtype2[1] c_myMSDcomtype2[2] c_myMSDcomtype2[3] c_myMSDcomtype2[4] file msdcom_type2.txt
+
+variable t equal step
+variable xmsd equal c_myMSD[1]
+variable ymsd equal c_myMSD[2]
+variable zmsd equal c_myMSD[3]
+variable avemsd equal c_myMSD[4]
+
+
+variable xmsdcom equal c_myMSDcom[1]
+variable ymsdcom equal c_myMSDcom[2]
+variable zmsdcom equal c_myMSDcom[3]
+variable avemsdcom equal c_myMSDcom[4]
+
+
+fix mymsdfile all print 1000 "$t ${xmsd} ${ymsd} ${zmsd} ${avemsd}" file MSD_output.dat screen no
+fix mymsdcomfile all print 1000 "$t ${xmsdcom} ${ymsdcom} ${zmsdcom} ${avemsdcom}" file MSDcom_output.dat screen no
+
+variable nloop1 file near_anchor.txt
+
+    label loop1
+
+#print "############### LOOP ${nloop1} ###############"
+group near_anchor id ${nloop1}
+
+  
+    next nloop1
+    jump SELF loop1
+    
+    variable nloop2 file far_anchor.txt
+
+    label loop2
+
+#print "############### LOOP ${nloop2} ###############"
+group far_anchor id ${nloop2}
+
+  
+    next nloop2
+    jump SELF loop2
+
+compute MSDcom_near_anchor near_anchor msd com yes
+compute MSDcom_far_anchor far_anchor msd com yes
+fix msdnear near_anchor ave/time 100 5 1000 c_MSDcom_near_anchor[1] c_MSDcom_near_anchor[2] c_MSDcom_near_anchor[3] c_MSDcom_near_anchor[4] file msdcom_near_anchor.txt
+fix msdfar far_anchor ave/time 100 5 1000 c_MSDcom_far_anchor[1] c_MSDcom_far_anchor[2] c_MSDcom_far_anchor[3] c_MSDcom_far_anchor[4] file msdcom_far_anchor.txt
+
+
+
+timestep     0.01
+run 10000000
+
+write_data 6_system_after_final.data

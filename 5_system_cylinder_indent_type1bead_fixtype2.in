@@ -1,0 +1,80 @@
+variable mn equal 100
+variable epsilon equal ${mn}/100
+
+
+  units           lj
+  atom_style      full
+
+  bond_style      hybrid harmonic zero
+  angle_style     cosine
+  dihedral_style  none
+
+  pair_style      hybrid lj/cut 2.5
+
+  pair_modify     mix arithmetic
+  special_bonds   lj/coul  1 1 1
+  #comm_modify mode single cutoff 3.0
+  boundary s s s    
+  read_data 4_system_after_indent.data
+  
+  
+  
+#          atomTypes  pairStyle   epsilon sigma rcutoff
+
+pair_coeff    1 1     lj/cut      ${epsilon}     1.0   2.5
+pair_coeff    2 2     lj/cut      ${epsilon}     1.0   2.5
+
+
+bond_coeff 3 harmonic 100.0 1.0
+
+bond_coeff    2       zero
+
+
+bond_coeff    1       zero
+  
+  
+angle_coeff 1 5.0  #<-10nm fiber
+
+
+
+
+dump         1 all custom 10000 traj_stage4.lammpstrj id mol type x y z ix iy iz
+
+
+group type2 type 2
+group ALL_new subtract all type2
+
+
+#     --- run the simulation ---
+
+# To use Langevin dynamics in LAMMPS you need both "fix langevin" and "fix nve"
+# (See http://lammps.sandia.gov/doc/fix_langevin.html for details.)
+
+#                           Tstart     Tstop    tdamp      randomseed
+
+fix fxlan ALL_new  langevin       1.0        1.0     1.0         123456
+
+#                     pstart   pstop  pdamp(time-units, 2000 iters usually)
+fix fxnve ALL_new  nve 
+# (See http://lammps.sandia.gov/doc/fix_langevin.html)
+
+
+
+
+
+thermo_style    custom step temp pe etotal press vol epair ebond eangle edihed
+thermo_modify   norm no  #(report total energy not energy / num_atoms)
+thermo          1000    #(time interval for printing out "thermo" data)
+
+timestep     0.01
+
+
+
+
+fix INDENT ALL_new indent 0.1 cylinder z 0.0 0.0 4 side in
+fix upper ALL_new indent 0.1 plane z +40 hi side in
+fix lower ALL_new  indent 0.1 plane z -40 lo side in
+run 2000000
+
+
+write_data 5_system_initial.data
