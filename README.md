@@ -21,7 +21,7 @@ The repository comprises scripts and code employed for the investigation of bact
 - 3_system_condensation.in: LAMMPS script file designed to incorporate condensation forces between loop anchors, allowing the system to simulate as a self-attracting polymer.
 - table_bonds_stage2.dat: Table contains condensation forces.
 - 4_system_cylinder_indent.in: Script file for LAMMPS that applies cylindrical indenter forces to only anchor beads to align the curved anchor regions into a linear configuration.
-- 5_system_cylinder_indent_type1bead_fixtype2.in:  LAMMPS script that applies cylindrical indenter forces to all beads, fitting the bottle-brush polymer structure into its smallest volume (\( R = 13 \sigma \)), where \( \sigma \) is the bead diameter and \( R \) is the cylinder radius. Anchor regions are made rigid by excluding them from Langevin dynamics.
+- 5_system_cylinder_indent_type1bead_fixtype2.in:  LAMMPS script that applies cylindrical indenter forces to all beads, fitting the bottle-brush polymer structure into its smallest volume $(\( R = 13 \sigma \))$, where $\( \sigma \)$ is the bead diameter and $\( R \)$ is the cylinder radius. Anchor regions are made rigid by excluding them from Langevin dynamics.
 
 ## (B) Final Simulation: Minimal Model Bacterial Chromosome for Anisotropic Behavior
 - system.in: LAMMPS script file for the final simulation, modeling the bottle-brush complex within cylindrical confinement.
