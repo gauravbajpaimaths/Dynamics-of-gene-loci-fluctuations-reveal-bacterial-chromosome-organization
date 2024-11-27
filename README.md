@@ -26,7 +26,7 @@ The repository comprises scripts and code employed for the investigation of bact
 ## (B) Final Simulation: Minimal Model Bacterial Chromosome for Anisotropic Behavior
 - system.in: LAMMPS script file for the final simulation, modeling the bottle-brush complex within cylindrical confinement.
 - 5_system_initial.data: This file contains the initial input with polymer configuration for the final simulation.
-- command.sh: Shell script to run multiple simulations with different Lennard-Jones interaction strengths (\( \epsilon \)).
+- command.sh: Shell script to run multiple simulations with different Lennard-Jones interaction strengths $(\epsilon)$.
 
 
 ## How to run
