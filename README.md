@@ -14,6 +14,7 @@ The repository comprises scripts and code employed for the investigation of bact
 
 
 ## File description
+- step_U_new.m: MATLAB script generates a step-like potential and its derivative for anchor bead interactions, producing a table usable in LAMMPS via pair_style table.
 ## (A) Initial Simulations: Assembly of the Polymer Bottle-Brush Structure
 - system.data: This file contains the initial input with polymer configuration. Type 1 beads are chromatin beads, and every 60th bead is Type 2, representing anchor beads.
 - 1_system_min.in:  A script file for LAMMPS, intended to perform an energy minimization procedure for the system.
