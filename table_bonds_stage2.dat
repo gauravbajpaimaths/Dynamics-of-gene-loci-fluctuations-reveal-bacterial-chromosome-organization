@@ -1,6 +1,6 @@
 #  We generate this potential and its derivative table using a MATLAB script for LAMMPS.
 # i r_{anchor}  U(r_{anchor})  -dU/dr|r_{anchor}
-#   where U(r) = step(r_{anchor}-3) * abs(r_{anchor}-3) * 10
+#   where U(r_{anchor}) = step(r_{anchor}-3) * abs(r_{anchor}-3) * 10
 
 STAGE2
 N 2545  FP 0 0  EQ 0
