@@ -1,8 +1,5 @@
-# This table contains the bond potential between condensin-anchors 
-# used by Imakaev in the Science 2013 (metaphase chromatin HiC) paper,
-# two-stage model, during stage 2.
-#
-# i r_i  U(r_i)  -dU/dr|r_i
+#  We generate this potential and its derivative table using a MATLAB script for LAMMPS.
+# i r_{anchor}  U(r_{anchor})  -dU/dr|r_{anchor}
 #   where U(r) = step(d-3) * abs(d-3) * 10
 
 STAGE2
