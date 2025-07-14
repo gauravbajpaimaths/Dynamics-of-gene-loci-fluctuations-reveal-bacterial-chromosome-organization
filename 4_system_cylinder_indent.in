@@ -1,7 +1,12 @@
+# LAMMPS input script for Stage 3: Applying cylindrical indentation to anchor beads
+# Type 1 = chromatin bead, Type 2 = anchor bead
+# Bond coeff 1 = anchor spring, 2 = anchor attraction, 3 = chromatin backbone
+
+# -- Parameter Initialization --
 variable mn equal 100
 variable epsilon equal ${mn}/100
 
-
+# -- Simulation Setup --
   units           lj
   atom_style      full
 
@@ -14,69 +19,50 @@ variable epsilon equal ${mn}/100
   pair_modify     mix arithmetic
   special_bonds   lj/coul  1 1 1
   comm_modify mode single cutoff 3.0
-  boundary s s s    
+  boundary s s s
+# Load configuration from condensation stage
   read_data 3_system_after_condensation.data
   
-  
-  
-#          atomTypes  pairStyle   epsilon sigma rcutoff
-
+# Pairwise interactions between chromatin and anchor beads
 pair_coeff    1 1     lj/cut      ${epsilon}     1.0   2.5
 pair_coeff    2 2     lj/cut      ${epsilon}     1.0   2.5
 
-
+# Chromatin backbone stiffness
 bond_coeff 3 harmonic 100.0 1.0
 
-# During stage 2, add attractive forces between all pairs of non-consecutive
-# condensin anchors.  These forces are stored in the table file below:
-#          bondType   bondStyle      filename            label
+# Anchor-anchor attraction defined via tabulated potential
 bond_coeff    2       table      table_bonds_stage2.dat  STAGE2
 
-
-
-#          bondType   bondStyle    k     r0
+# Anchor spring bond
 bond_coeff    1       harmonic    10.0  0.5
   
-  
-angle_coeff 1 5.0  #<-10nm fiber
+# Bending stiffness for chromatin
+angle_coeff 1 5.0
 
-
-
-
+# -- Trajectory Output --
 dump         1 all custom 2000 traj_stage3.lammpstrj id mol type x y z ix iy iz
 
-
-
-
-
-#     --- run the simulation ---
-
-# To use Langevin dynamics in LAMMPS you need both "fix langevin" and "fix nve"
-# (See http://lammps.sandia.gov/doc/fix_langevin.html for details.)
-
-#                           Tstart     Tstop    tdamp      randomseed
-
+# Apply Langevin thermostat
 fix fxlan all langevin       1.0        1.0     1.0         123456
 
+# Integrate system dynamics
+fix fxnve all nve
 
-fix fxnve all nve 
-# (See http://lammps.sandia.gov/doc/fix_langevin.html)
-
-
-
-
-
+# Thermodynamic output settings
 thermo_style    custom step temp pe etotal press vol epair ebond eangle edihed
-thermo_modify   norm no  #(report total energy not energy / num_atoms)
-thermo          1000    #(time interval for printing out "thermo" data)
+thermo_modify   norm no
+thermo          1000
 
 timestep     0.01
 
+# Define group of anchor beads
 group anchor type 2
 
-
+# Apply soft cylindrical indentation to anchor beads
 fix INDENT anchor indent 1 cylinder z 0.0 0.0 0.1 side in
+
+# -- Run Simulation --
 run 1000000
 
-
+# Save system configuration after indentation
 write_data 4_system_after_indent.data
