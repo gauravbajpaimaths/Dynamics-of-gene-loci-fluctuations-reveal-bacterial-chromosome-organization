@@ -1,34 +1,48 @@
-  # Default styles for molecules built out of "Monomers"
+# LAMMPS input script for energy minimization of chromatin-anchor system
+# Type 1 = chromatin bead, Type 2 = anchor bead
+# Bond coeff 3 = harmonic bonds between all neighboring beads
+
+# -- Initialization --
   units           lj
   atom_style      full
 
+  # Define bond, angle, and dihedral styles
   bond_style      hybrid harmonic 
   angle_style     cosine
   dihedral_style  none
 
+  # Lennard-Jones interaction with a cutoff for nonbonded interactions
   pair_style      hybrid lj/cut 2.5
 
   pair_modify     mix arithmetic
   special_bonds   lj/coul  1 1 1
+  # Use shrink-wrapped boundaries in all directions
   boundary s s s    
+  # Read initial system configuration
   read_data system.data
   
+  # Pair coefficients:
+  # Type 1-1 and 2-2 interactions using lj/cut potential
   pair_coeff 1 1 lj/cut 1.0 1.0 1.122462048309373
   pair_coeff 2 2 lj/cut 1.0 1.0 1.122462048309373
+  # Bond type 3: stiff harmonic bond for neighboring beads (e.g., chromatin backbone)
   bond_coeff 3 harmonic 100.0 1.0
-  angle_coeff 1 5.0  #<-10nm fiber
-  # stage 1 bonds are initially off
-  bond_coeff 1 harmonic 0.0 1.0   # <--(we can override this later)"
-  # stage 2 bonds are initially off
-  bond_coeff 2 harmonic 0.0 0.0   # <--(we can override this later)"
+  # Angle potential for chromatin stiffness
+  angle_coeff 1 5.0  
   
-  # -- Run Section --
-
+  # Bond type 1: dummy bond (zero force)
+  bond_coeff 1 harmonic 0.0 1.0
+ 
+  # Bond type 2: another dummy or fixed bond type
+  bond_coeff 2 harmonic 0.0 0.0
+  
+  # -- Output settings --
 dump    1 all custom 10000 traj_min.lammpstrj id mol type x y z ix iy iz
 thermo_style    custom step pe etotal vol epair ebond eangle edihed
 thermo_modify   norm no  #(report total energy not energy / num_atoms)
 thermo          100    #(time interval for printing out "thermo" data)
 
+# -- Energy Minimization --
 # Now minimize the system:
 
 min_style quickmin
