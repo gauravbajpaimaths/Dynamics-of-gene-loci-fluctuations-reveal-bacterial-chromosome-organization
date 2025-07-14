@@ -1,3 +1,8 @@
+# LAMMPS input script to dynamically activate harmonic spring interactions between anchor beads
+# Type 1 = chromatin bead, Type 2 = anchor bead
+# Bond coeff 3 = chromatin backbone; Bond coeff 1 = dynamic anchor springs
+
+# -- Simulation Initialization --
   units           lj
   atom_style      full
 
@@ -10,6 +15,7 @@
   pair_modify     mix arithmetic
   special_bonds   lj/coul  1 1 1
   boundary s s s    
+  # Read system after energy minimization
   read_data 1_system_after_min.data
   
   pair_coeff 1 1 lj/cut 1.0 1.0 1.122462048309373
@@ -21,70 +27,51 @@
 
   bond_coeff 2 harmonic 0.0 0.0  
   
-  # -- Run Section --
-
+# -- Simulation Parameters --
 mass      *  1.0
 timestep     0.005     #  "dt"
 dump         1 all custom 1000 traj_stage1.lammpstrj id mol type x y z ix iy iz
 reset_timestep  0
 
-
-#     --- run the simulation ---
-
-
-# set the velocity to zero
+# Set initial velocities to zero
 velocity all create 0.0  123456
 
-# To use Langevin dynamics in LAMMPS you need both "fix langevin" and "fix nve"
-# (See http://lammps.sandia.gov/doc/fix_langevin.html for details.)
-
-#                           Tstart     Tstop    tdamp      randomseed
-
+# Langevin thermostat to maintain temperature at 1.0
 fix fxlan all langevin       1.0        1.0     1.0         123456
 
-#                     pstart   pstop  pdamp(time-units, 2000 iters usually)
-#fix fxnph all nph x  -0.000   -0.000   1.0
+# Integrate equations of motion (required with Langevin)
 fix fxnve all nve 
 # (See http://lammps.sandia.gov/doc/fix_langevin.html)
 
+# Recenters system coordinates each step
 fix fxcenter all recenter 0.0 0.0 0.0
 
+# Output settings for energy and pressure monitoring
 thermo_style    custom step temp pe etotal press vol epair ebond eangle edihed
 thermo_modify   norm no  #(report total energy not energy / num_atoms)
 thermo          1000    #(time interval for printing out "thermo" data)
 
-#balance dynamic x 20 1.0 -out tmp.balance
-#balance x uniform
-
-
+# -- Gradual Activation of Anchor Bonds --
 variable nloop1 loop 300
 
-    label loop1
+# Loop over timesteps to linearly increase anchor bond stiffness
+label loop1
 
-    print "############### LOOP ${nloop1} ###############"
+print "############### LOOP ${nloop1} ###############"
 
-    #Anchors of neighboring loops were brought together 
-    #  using harmonic springs with a potential U = k * (r – r0)2; r0=0.5.
-    #  To avoid abrupt motion of the loop anchors, the force was gradually 
-    #  turned on over the first 300000 timesteps, with k linearly increasing 
-    #  in time from 0 to 10 kT."
-    # Do this by changing the parameters in the force-field for these
-    # bonds.
-    #
-    #    Formula used for "bond_style harmonic":
-    # Ubond(r) = k*(r-r0)^2
-    #           bondType    style
-    #bond_coeff    1       harmonic    0.1  0.5
-  
-    variable time equal step
-    variable KbondC equal $((v_time+1)*(10.0/300000.0))
-    print "timestep = ${time}, KbondC = ${KbondC}" file KbondC_vs_time.dat
+# Compute timestep-based stiffness coefficient KbondC
+variable time equal step
+variable KbondC equal $((v_time+1)*(10.0/300000.0))
+print "timestep = ${time}, KbondC = ${KbondC}" file KbondC_vs_time.dat
 
-  
-    bond_coeff    1       harmonic    ${KbondC}  0.5
-    run   1000
-  
-    next nloop1
-    jump SELF loop1
+# Update bond strength for type 1 with gradually increasing KbondC
+bond_coeff    1       harmonic    ${KbondC}  0.5
 
+# Run simulation for 1000 steps at current stiffness
+run   1000
+
+next nloop1
+jump SELF loop1
+
+# Save the final system after loop anchoring
 write_data 2_system_after_loopcreate.data
