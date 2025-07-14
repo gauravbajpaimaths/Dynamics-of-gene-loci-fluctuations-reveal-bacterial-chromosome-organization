@@ -1,7 +1,12 @@
+# LAMMPS input script for Stage 2: Chromatin condensation with anchor-anchor attractions
+# Type 1 = chromatin bead, Type 2 = anchor bead
+# Bond coeff 1 = anchor spring (harmonic), Bond coeff 2 = anchor attraction (table), Bond coeff 3 = chromatin backbone
+
+# -- Parameter Initialization --
 variable mn equal 100
 variable epsilon equal ${mn}/100
 
-
+# -- System Initialization --
   units           lj
   atom_style      full
 
@@ -15,6 +20,7 @@ variable epsilon equal ${mn}/100
   special_bonds   lj/coul  1 1 1
   comm_modify mode single cutoff 3.0
   boundary s s s    
+# Load configuration from previous stage
   read_data 2_system_after_loopcreate.data
   
   pair_coeff 1 1 lj/cut 1.0 1.0 1.122462048309373
@@ -26,53 +32,47 @@ variable epsilon equal ${mn}/100
   
   bond_coeff 2 harmonic 0 0  
   
-  # -- Run Section --
-
+# -- Physical Parameters --
 mass      *  1.0
 
 
-timestep     0.005     #  "dt"
+timestep     0.005     
 dump         1 all custom 2000 traj_stage2.lammpstrj id mol type x y z ix iy iz
 reset_timestep  0
 
 
 
 minimize 1.0e-7 1.0e-8 30000 100000000
-#     --- run the simulation ---
 
-# set the velocity to zero
+
+# Initialize velocities to zero
 velocity all create 0.0  123456
 
-# To use Langevin dynamics in LAMMPS you need both "fix langevin" and "fix nve"
-# (See http://lammps.sandia.gov/doc/fix_langevin.html for details.)
-
-#                           Tstart     Tstop    tdamp      randomseed
-
+# Langevin thermostat to maintain temperature
 fix fxlan all langevin       1.0        1.0     1.0         123456
 
-#                     pstart   pstop  pdamp(time-units, 2000 iters usually)
+# Integrate equations of motion
 fix fxnve all nve 
-# (See http://lammps.sandia.gov/doc/fix_langevin.html)
 
+# Recenter coordinates to avoid drift
 fix fxcenter all recenter 0.0 0.0 0.0
 
+# Output settings for monitoring
 thermo_style    custom step temp pe etotal press vol epair ebond eangle edihed
-thermo_modify   norm no  #(report total energy not energy / num_atoms)
-thermo          1000    #(time interval for printing out "thermo" data)
+thermo_modify   norm no  
+thermo          1000    
 
-
+# -- Force Field Redefinition with Table --
 bond_style      hybrid harmonic table linear 2545
-#          atomTypes  pairStyle   epsilon sigma rcutoff
 
+# Adjust pairwise interaction strength using epsilon parameter
 pair_coeff    1 1     lj/cut      ${epsilon}     1.0   2.5
 pair_coeff    2 2     lj/cut      ${epsilon}     1.0   2.5
 
 
  bond_coeff 3 harmonic 100.0 1.0
 
-# During stage 2, add attractive forces between all pairs of non-consecutive
-# condensin anchors.  These forces are stored in the table file below:
-#          bondType   bondStyle      filename            label
+# Anchor-anchor attraction loaded from table file
 bond_coeff    2       table      table_bonds_stage2.dat  STAGE2
 
 
@@ -80,6 +80,7 @@ bond_coeff    2       table      table_bonds_stage2.dat  STAGE2
 #          bondType   bondStyle    k     r0
 bond_coeff    1       harmonic    10 0.5
 
+# -- MSD Computation Setup --
 group chain type 1
 compute myMSD chain msd
 compute myMSDcom chain msd com yes
@@ -95,13 +96,15 @@ variable ymsdcom equal c_myMSDcom[2]
 variable zmsdcom equal c_myMSDcom[3]
 variable avemsdcom equal c_myMSDcom[4]
 
-
+# Output MSD and MSD of center of mass to file
 fix mymsdfile all print 1000 "$t ${xmsd} ${ymsd} ${zmsd} ${avemsd}" file MSD_output.dat screen no
 fix mymsdcomfile all print 1000 "$t ${xmsdcom} ${ymsdcom} ${zmsdcom} ${avemsdcom}" file MSDcom_output.dat screen no
 
 
 timestep     0.005
+# -- Main Simulation Run --
 run 1000000
 
 
+# Save final state after condensation
 write_data 3_system_after_condensation.data
